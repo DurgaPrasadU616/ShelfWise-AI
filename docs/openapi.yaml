@@ -1,0 +1,1401 @@
+openapi: 3.0.3
+info:
+  title: ShelfWise AI API
+  description: >
+    AI-Powered Smart Inventory & Expiry Loss Prediction Platform.
+    Human-readable reference: docs/05_API_SPECIFICATION.md
+  version: 1.0.0
+servers:
+  - url: http://localhost:5000/api
+    description: Local development
+  - url: https://<render-url>.onrender.com/api
+    description: Production (Render)
+tags:
+  - name: Auth
+  - name: Users
+  - name: Products
+  - name: Inventory
+  - name: Suppliers
+  - name: Sales
+  - name: Purchase Orders
+  - name: OCR
+  - name: Recommendations
+  - name: Dashboard
+  - name: Reports
+  - name: Notifications
+  - name: Audit Logs
+  - name: Health
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    refreshCookie:
+      type: apiKey
+      in: cookie
+      name: sw_refresh
+  schemas:
+    Envelope:
+      type: object
+      required: [success, data]
+      properties:
+        success: { type: boolean }
+        data: {}
+    Error:
+      type: object
+      required: [success, error]
+      properties:
+        success: { type: boolean, enum: [false] }
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string }
+            message: { type: string }
+            details:
+              type: object
+              properties:
+                fields:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      path: { type: string }
+                      message: { type: string }
+    Paginated:
+      type: object
+      properties:
+        items: { type: array, items: {} }
+        total: { type: integer }
+        page: { type: integer }
+        limit: { type: integer }
+        pages: { type: integer }
+    User:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        email: { type: string }
+        role:
+          type: string
+          enum: [admin, manager, inventory_staff, viewer]
+        isActive: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    UserInput:
+      type: object
+      required: [name, email, password]
+      properties:
+        name: { type: string, minLength: 2, maxLength: 80 }
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8, maxLength: 64 }
+    Product:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        sku: { type: string }
+        category: { type: string }
+        brand: { type: string }
+        unit:
+          type: string
+          enum: [each, box, pack, kg, g, l, ml]
+        description: { type: string }
+        isActive: { type: boolean }
+    ProductInput:
+      type: object
+      required: [name, sku]
+      properties:
+        name: { type: string }
+        sku: { type: string }
+        category: { type: string }
+        brand: { type: string }
+        unit:
+          type: string
+          enum: [each, box, pack, kg, g, l, ml]
+        description: { type: string }
+    Supplier:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        contactName: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        address: { type: string }
+    SupplierInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        contactName: { type: string }
+        email: { type: string, format: email }
+        phone: { type: string }
+        address: { type: string }
+    Inventory:
+      type: object
+      properties:
+        id: { type: string }
+        product: { $ref: '#/components/schemas/Product' }
+        supplier: { $ref: '#/components/schemas/Supplier' }
+        quantity: { type: integer, minimum: 0 }
+        unitCost: { type: number, minimum: 0 }
+        expiryDate: { type: string, format: date }
+        batchNo: { type: string }
+        location: { type: string }
+        status:
+          type: string
+          enum: [in_stock, low, expired]
+    InventoryInput:
+      type: object
+      required: [product, quantity, unitCost, batchNo]
+      properties:
+        product: { type: string }
+        supplier: { type: string }
+        quantity: { type: integer, minimum: 0 }
+        unitCost: { type: number, minimum: 0 }
+        expiryDate: { type: string, format: date }
+        batchNo: { type: string }
+        location: { type: string }
+    StockAdjust:
+      type: object
+      required: [delta, reason]
+      properties:
+        delta: { type: integer, minimum: 1 }
+        reason: { type: string, minLength: 2 }
+    Sale:
+      type: object
+      properties:
+        id: { type: string }
+        product: { type: string }
+        quantity: { type: integer, minimum: 1 }
+        unitPrice: { type: number, minimum: 0 }
+        saleDate: { type: string, format: date-time }
+        invoiceRef: { type: string }
+    SaleInput:
+      type: object
+      required: [product, quantity, unitPrice]
+      properties:
+        product: { type: string }
+        quantity: { type: integer, minimum: 1 }
+        unitPrice: { type: number, minimum: 0 }
+        saleDate: { type: string, format: date-time }
+        invoiceRef: { type: string }
+    PurchaseOrder:
+      type: object
+      properties:
+        id: { type: string }
+        orderNo: { type: string }
+        supplier: { $ref: '#/components/schemas/Supplier' }
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              product: { type: string }
+              quantity: { type: integer, minimum: 1 }
+              unitCost: { type: number, minimum: 0 }
+              expectedDate: { type: string, format: date }
+        status:
+          type: string
+          enum: [draft, placed, received, cancelled]
+    PurchaseOrderInput:
+      type: object
+      required: [orderNo, items]
+      properties:
+        orderNo: { type: string }
+        supplier: { type: string }
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [product, quantity, unitCost]
+            properties:
+              product: { type: string }
+              quantity: { type: integer, minimum: 1 }
+              unitCost: { type: number, minimum: 0 }
+              expectedDate: { type: string, format: date }
+    ExtractedItem:
+      type: object
+      properties:
+        productName: { type: string }
+        sku: { type: string }
+        quantity: { type: integer, minimum: 0 }
+        unitCost: { type: number, minimum: 0 }
+        expiryDate: { type: string, format: date }
+        lineTotal: { type: number }
+        errors:
+          type: array
+          items: { type: string }
+    InvoiceUpload:
+      type: object
+      properties:
+        uploadId: { type: string }
+        status:
+          type: string
+          enum: [processing, needs_review, committed, failed]
+        extractedItems:
+          type: array
+          items: { $ref: '#/components/schemas/ExtractedItem' }
+        ocrEngine:
+          type: string
+          enum: [vision, tesseract]
+        error: { type: string }
+    Recommendation:
+      type: object
+      properties:
+        id: { type: string }
+        product: { $ref: '#/components/schemas/Product' }
+        type:
+          type: string
+          enum: [discount, restock, dispose, donate, reprice]
+        priority:
+          type: string
+          enum: [high, medium, low]
+        reason: { type: string }
+        suggestedDiscountPct: { type: number, minimum: 0, maximum: 70 }
+        suggestedQuantity: { type: integer }
+        status:
+          type: string
+          enum: [open, accepted, dismissed]
+        source:
+          type: string
+          enum: [ai, rule]
+    RecommendationStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [accepted, dismissed]
+    DashboardSummary:
+      type: object
+      properties:
+        totalProducts: { type: integer }
+        inventoryValue: { type: number }
+        nearExpiry: { type: integer }
+        expired: { type: integer }
+        lowStock: { type: integer }
+        fastMoving: { type: integer }
+        slowMoving: { type: integer }
+        revenueSaved: { type: number }
+        predictedLoss: { type: number }
+        healthScore: { type: integer }
+    Report:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        type:
+          type: string
+          enum: [inventory, expiry, sales, loss, demand]
+        generatedBy: { type: string }
+        rows: { type: integer }
+        createdAt: { type: string, format: date-time }
+    ReportInput:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [inventory, expiry, sales, loss, demand]
+        filters:
+          type: object
+          properties:
+            from: { type: string, format: date }
+            to: { type: string, format: date }
+            category: { type: string }
+            status: { type: string }
+    Notification:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        message: { type: string }
+        type:
+          type: string
+          enum: [info, warning, danger]
+        read: { type: boolean }
+        link: { type: string }
+        createdAt: { type: string, format: date-time }
+    AuditLog:
+      type: object
+      properties:
+        id: { type: string }
+        userId: { type: string }
+        action: { type: string }
+        resource: { type: string }
+        resourceId: { type: string }
+        details: { type: object }
+        ip: { type: string }
+        createdAt: { type: string, format: date-time }
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user (role forced to inventory_staff)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UserInput' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      user: { $ref: '#/components/schemas/User' }
+        '409': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login, sets sw_refresh cookie, returns access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200':
+          description: OK
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      accessToken: { type: string }
+                      expiresIn: { type: integer }
+                      user: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Rotate refresh cookie, return new access token
+      security:
+        - refreshCookie: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      accessToken: { type: string }
+                      expiresIn: { type: integer }
+        '401': { $ref: '#/components/responses/Error' }
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Clear cookie and revoke refresh token
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+        '401': { $ref: '#/components/responses/Error' }
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Current user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      user: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Error' }
+  /users:
+    get:
+      tags: [Users]
+      summary: List users (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: role, in: query, schema: { type: string, enum: [admin, manager, inventory_staff, viewer] } }
+        - { name: isActive, in: query, schema: { type: boolean } }
+        - { name: q, in: query, schema: { type: string } }
+        - { name: page, in: query, schema: { type: integer, default: 1 } }
+        - { name: limit, in: query, schema: { type: integer, default: 20 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: '#/components/schemas/Paginated' }
+        '403': { $ref: '#/components/responses/Error' }
+    post:
+      tags: [Users]
+      summary: Create user (admin)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - { $ref: '#/components/schemas/UserInput' }
+                - type: object
+                  properties:
+                    role: { type: string, enum: [admin, manager, inventory_staff, viewer] }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      user: { $ref: '#/components/schemas/User' }
+        '409': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+  /users/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    put:
+      tags: [Users]
+      summary: Update user (admin)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role: { type: string, enum: [admin, manager, inventory_staff, viewer] }
+                isActive: { type: boolean }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      user: { $ref: '#/components/schemas/User' }
+        '404': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+    delete:
+      tags: [Users]
+      summary: Soft delete user (admin)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+        '404': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+  /products:
+    get:
+      tags: [Products]
+      summary: List products
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: q, in: query, schema: { type: string } }
+        - { name: category, in: query, schema: { type: string } }
+        - { name: brand, in: query, schema: { type: string } }
+        - { name: isActive, in: query, schema: { type: boolean } }
+        - { name: page, in: query, schema: { type: integer, default: 1 } }
+        - { name: limit, in: query, schema: { type: integer, default: 20 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: '#/components/schemas/Paginated' }
+        '401': { $ref: '#/components/responses/Error' }
+    post:
+      tags: [Products]
+      summary: Create product (manager+)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProductInput' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      product: { $ref: '#/components/schemas/Product' }
+        '409': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+  /products/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    put:
+      tags: [Products]
+      summary: Update product (manager+)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProductInput' }
+      responses:
+        '200':
+          description: OK
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+    delete:
+      tags: [Products]
+      summary: Soft delete product (admin)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+        '404': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+  /inventory:
+    get:
+      tags: [Inventory]
+      summary: List inventory batches
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: product, in: query, schema: { type: string } }
+        - { name: supplier, in: query, schema: { type: string } }
+        - { name: status, in: query, schema: { type: string, enum: [in_stock, low, expired] } }
+        - { name: nearExpiryDays, in: query, schema: { type: integer } }
+        - { name: lowStock, in: query, schema: { type: boolean } }
+        - { name: page, in: query, schema: { type: integer, default: 1 } }
+        - { name: limit, in: query, schema: { type: integer, default: 20 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: '#/components/schemas/Paginated' }
+        '401': { $ref: '#/components/responses/Error' }
+    post:
+      tags: [Inventory]
+      summary: Create inventory batch (manager+)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/InventoryInput' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      batch: { $ref: '#/components/schemas/Inventory' }
+        '409': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+  /inventory/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    put:
+      tags: [Inventory]
+      summary: Update inventory batch (manager+)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/InventoryInput' }
+      responses:
+        '200':
+          description: OK
+        '404': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+    delete:
+      tags: [Inventory]
+      summary: Soft delete batch (admin)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+        '404': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+  /inventory/{id}/adjust:
+    post:
+      tags: [Inventory]
+      summary: Adjust stock quantity (manager+)
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/StockAdjust' }
+      responses:
+        '200':
+          description: OK
+        '422': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+  /inventory/expiring:
+    get:
+      tags: [Inventory]
+      summary: Batches expiring within N days
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: days, in: query, schema: { type: integer, default: 14 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Inventory' }
+        '401': { $ref: '#/components/responses/Error' }
+  /inventory/expired:
+    get:
+      tags: [Inventory]
+      summary: Expired batches
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Inventory' }
+        '401': { $ref: '#/components/responses/Error' }
+  /suppliers:
+    get:
+      tags: [Suppliers]
+      summary: List suppliers
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: q, in: query, schema: { type: string } }
+        - { name: page, in: query, schema: { type: integer, default: 1 } }
+        - { name: limit, in: query, schema: { type: integer, default: 20 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: '#/components/schemas/Paginated' }
+        '401': { $ref: '#/components/responses/Error' }
+    post:
+      tags: [Suppliers]
+      summary: Create supplier (manager+)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SupplierInput' }
+      responses:
+        '201':
+          description: Created
+        '409': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+  /suppliers/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    put:
+      tags: [Suppliers]
+      summary: Update supplier (manager+)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SupplierInput' }
+      responses:
+        '200':
+          description: OK
+        '404': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+    delete:
+      tags: [Suppliers]
+      summary: Soft delete supplier (admin)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+        '404': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+  /sales:
+    get:
+      tags: [Sales]
+      summary: List sales
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: product, in: query, schema: { type: string } }
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+        - { name: page, in: query, schema: { type: integer, default: 1 } }
+        - { name: limit, in: query, schema: { type: integer, default: 20 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: '#/components/schemas/Paginated' }
+        '401': { $ref: '#/components/responses/Error' }
+    post:
+      tags: [Sales]
+      summary: Record a sale (manager+)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SaleInput' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      sale: { $ref: '#/components/schemas/Sale' }
+        '422': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+  /sales/trend:
+    get:
+      tags: [Sales]
+      summary: Sales trend series for charts
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+        - { name: granularity, in: query, schema: { type: string, enum: [daily, weekly] } }
+      responses:
+        '200':
+          description: OK
+        '422': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+  /purchase-orders:
+    get:
+      tags: [Purchase Orders]
+      summary: List purchase orders
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: status, in: query, schema: { type: string, enum: [draft, placed, received, cancelled] } }
+        - { name: supplier, in: query, schema: { type: string } }
+        - { name: page, in: query, schema: { type: integer, default: 1 } }
+        - { name: limit, in: query, schema: { type: integer, default: 20 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: '#/components/schemas/Paginated' }
+        '401': { $ref: '#/components/responses/Error' }
+    post:
+      tags: [Purchase Orders]
+      summary: Create purchase order draft (manager+)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PurchaseOrderInput' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      order: { $ref: '#/components/schemas/PurchaseOrder' }
+        '409': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+  /purchase-orders/{id}/place:
+    put:
+      tags: [Purchase Orders]
+      summary: Place purchase order (manager+)
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+        '409': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+  /purchase-orders/{id}/receive:
+    put:
+      tags: [Purchase Orders]
+      summary: Receive purchase order -> stock-in (manager+)
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+        '409': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+  /purchase-orders/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    delete:
+      tags: [Purchase Orders]
+      summary: Delete draft/cancelled PO (admin)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+        '409': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+  /ocr/upload:
+    post:
+      tags: [OCR]
+      summary: Upload invoice image for OCR (manager+ and inventory_staff)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Accepted, processing started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      uploadId: { type: string }
+                      status: { type: string, enum: [processing] }
+        '413': { $ref: '#/components/responses/Error' }
+        '415': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+  /ocr/{uploadId}:
+    parameters:
+      - { name: uploadId, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [OCR]
+      summary: Poll OCR status and extracted items
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: '#/components/schemas/InvoiceUpload' }
+        '404': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+    put:
+      tags: [OCR]
+      summary: Review/correct and commit extracted items
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [extractedItems]
+              properties:
+                extractedItems:
+                  type: array
+                  items: { $ref: '#/components/schemas/ExtractedItem' }
+      responses:
+        '200':
+          description: OK
+        '409': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+  /ocr/{uploadId}/retry:
+    post:
+      tags: [OCR]
+      summary: Re-run OCR with other engine
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: uploadId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                engine:
+                  type: string
+                  enum: [vision, tesseract]
+      responses:
+        '200':
+          description: OK
+        '404': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+  /ocr/{uploadId}/reject:
+    post:
+      tags: [OCR]
+      summary: Reject upload as failed/duplicate
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: uploadId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string }
+      responses:
+        '200':
+          description: OK
+        '404': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+  /recommendations:
+    get:
+      tags: [Recommendations]
+      summary: List AI/rule recommendations
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: type, in: query, schema: { type: string, enum: [discount, restock, dispose, donate, reprice] } }
+        - { name: status, in: query, schema: { type: string, enum: [open, accepted, dismissed] } }
+        - { name: priority, in: query, schema: { type: string, enum: [high, medium, low] } }
+        - { name: product, in: query, schema: { type: string } }
+        - { name: page, in: query, schema: { type: integer, default: 1 } }
+        - { name: limit, in: query, schema: { type: integer, default: 20 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: '#/components/schemas/Paginated' }
+        '401': { $ref: '#/components/responses/Error' }
+  /recommendations/{id}/status:
+    put:
+      tags: [Recommendations]
+      summary: Accept or dismiss recommendation (manager+)
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RecommendationStatus' }
+      responses:
+        '200':
+          description: OK
+        '409': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+  /dashboard/summary:
+    get:
+      tags: [Dashboard]
+      summary: KPI summary
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: '#/components/schemas/DashboardSummary' }
+        '401': { $ref: '#/components/responses/Error' }
+  /dashboard/charts:
+    get:
+      tags: [Dashboard]
+      summary: Chart series (demand, expiry buckets, category, stock status)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      demandTrend: { type: array, items: {} }
+                      expiryBuckets: { type: array, items: {} }
+                      categoryBreakdown: { type: array, items: {} }
+                      stockStatus: { type: array, items: {} }
+                      lastAiRun: { type: string, format: date-time }
+        '401': { $ref: '#/components/responses/Error' }
+  /dashboard/alerts:
+    get:
+      tags: [Dashboard]
+      summary: Top urgent alerts and recommendations
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      alerts:
+                        type: array
+                        items: { $ref: '#/components/schemas/Notification' }
+                      recs:
+                        type: array
+                        items: { $ref: '#/components/schemas/Recommendation' }
+        '401': { $ref: '#/components/responses/Error' }
+  /reports:
+    get:
+      tags: [Reports]
+      summary: List saved reports
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: type, in: query, schema: { type: string, enum: [inventory, expiry, sales, loss, demand] } }
+        - { name: page, in: query, schema: { type: integer, default: 1 } }
+        - { name: limit, in: query, schema: { type: integer, default: 20 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: '#/components/schemas/Paginated' }
+        '401': { $ref: '#/components/responses/Error' }
+  /reports/generate:
+    post:
+      tags: [Reports]
+      summary: Generate and save a report (manager+)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReportInput' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      report: { $ref: '#/components/schemas/Report' }
+        '422': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+  /reports/{id}:
+    get:
+      tags: [Reports]
+      summary: Report detail
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+        '404': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+  /reports/{id}/download:
+    get:
+      tags: [Reports]
+      summary: Download report as CSV
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: CSV download
+          content:
+            text/csv:
+              schema:
+                type: string
+        '404': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: Current user's notifications
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: unread, in: query, schema: { type: boolean } }
+        - { name: page, in: query, schema: { type: integer, default: 1 } }
+        - { name: limit, in: query, schema: { type: integer, default: 20 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: '#/components/schemas/Paginated' }
+        '401': { $ref: '#/components/responses/Error' }
+  /notifications/{id}/read:
+    put:
+      tags: [Notifications]
+      summary: Mark notification read (owner)
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+        '404': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+  /notifications/read-all:
+    put:
+      tags: [Notifications]
+      summary: Mark all own notifications read
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      updated: { type: integer }
+        '401': { $ref: '#/components/responses/Error' }
+  /audit-logs:
+    get:
+      tags: [Audit Logs]
+      summary: List audit logs (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: action, in: query, schema: { type: string } }
+        - { name: resource, in: query, schema: { type: string } }
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+        - { name: page, in: query, schema: { type: integer, default: 1 } }
+        - { name: limit, in: query, schema: { type: integer, default: 20 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: '#/components/schemas/Paginated' }
+        '403': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check (public)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      status: { type: string, enum: [ok] }
+                      uptime: { type: number }
+                      db: { type: string, enum: [connected] }
+                      version: { type: string }
+        '503': { $ref: '#/components/responses/Error' }
+components:
+  responses:
+    Error:
+      description: Error
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }

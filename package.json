@@ -1,0 +1,12 @@
+{
+  "name": "shelfwise-ai",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "AI-Powered Smart Inventory & Expiry Loss Prediction Platform",
+  "scripts": {
+    "dev:client": "npm --prefix client run dev",
+    "dev:server": "npm --prefix server run dev",
+    "test": "npm run test --prefix server && npm run test --prefix client"
+  }
+}

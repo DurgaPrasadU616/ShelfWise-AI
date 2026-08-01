@@ -1,0 +1,25 @@
+ShelfWise-AI/
+
+spec.md                      ⭐ Master specification
+
+docs/
+│
+├── 01_PROJECT_OVERVIEW.md
+├── 02_SYSTEM_ARCHITECTURE.md
+├── 03_COMPONENT_DESIGN.md
+├── 04_DATABASE_DESIGN.md
+├── 05_API_SPECIFICATION.md
+├── 06_AI_ENGINE.md
+├── 07_OCR_PIPELINE.md
+├── 08_FRONTEND_ARCHITECTURE.md
+├── 09_BACKEND_ARCHITECTURE.md
+├── 10_DEPLOYMENT.md
+├── 11_ERROR_SCENARIOS.md
+├── 12_EDGE_CASES.md
+├── 13_TEST_PLAN.md
+├── 14_CODING_GUIDELINES.md
+├── 15_DEVELOPMENT_PHASES.md
+├── 16_SEQUENCE_DIAGRAMS.md
+├── 17_UML.md
+├── 18_SWIMLANE.md
+└── 19_README.md
