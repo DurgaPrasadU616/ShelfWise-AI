@@ -6,7 +6,7 @@ const reportSchema = new mongoose.Schema(
     type: {
       type: String,
       required: true,
-      enum: ['inventory', 'expiry', 'sales', 'loss', 'demand']
+      enum: ['inventory', 'expiry', 'sales', 'loss', 'demand', 'recommendation']
     },
     generatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     filters: { type: mongoose.Schema.Types.Mixed },

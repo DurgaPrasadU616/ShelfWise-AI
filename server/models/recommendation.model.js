@@ -17,6 +17,9 @@ const recommendationSchema = new mongoose.Schema(
     suggestedDiscountPct: { type: Number, min: 0, max: 100 },
     suggestedQuantity: { type: Number, min: 0 },
     expectedOutcome: { type: String },
+    estimatedRevenueSaved: { type: Number },
+    estimatedLossPrevented: { type: Number },
+    confidenceScore: { type: Number, min: 0, max: 100 },
     status: {
       type: String,
       enum: ['open', 'accepted', 'dismissed'],

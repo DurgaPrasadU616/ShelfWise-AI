@@ -1,5 +1,12 @@
 import 'dotenv/config';
 
+if (process.env.NODE_ENV === 'production') {
+  if (!process.env.JWT_ACCESS_SECRET || !process.env.JWT_REFRESH_SECRET) {
+    console.error('FATAL ERROR: JWT_ACCESS_SECRET and JWT_REFRESH_SECRET environment variables are required in production.');
+    process.exit(1);
+  }
+}
+
 const parseBool = (value, fallback = false) => {
   if (value === undefined || value === null || value === '') return fallback;
   return ['1', 'true', 'yes', 'on'].includes(String(value).toLowerCase());
@@ -41,16 +48,16 @@ const config = {
   },
 
   jwt: {
-    accessSecret: process.env.JWT_ACCESS_SECRET || 'dev-access-secret-change-me',
-    refreshSecret: process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret-change-me',
+    accessSecret: process.env.JWT_ACCESS_SECRET,
+    refreshSecret: process.env.JWT_REFRESH_SECRET,
     accessTtl: process.env.JWT_ACCESS_TTL || '15m',
     refreshTtl: process.env.JWT_REFRESH_TTL || '7d',
   },
 
   cookie: {
     name: 'sw_refresh',
-    secure: parseBool(process.env.COOKIE_SECURE, false),
-    sameSite: process.env.COOKIE_SAME_SITE || 'lax',
+    secure: process.env.NODE_ENV === 'production' ? true : parseBool(process.env.COOKIE_SECURE, false),
+    sameSite: process.env.NODE_ENV === 'production' ? 'lax' : (process.env.COOKIE_SAME_SITE || 'lax'),
     path: '/api/auth',
   },
 
@@ -58,6 +65,21 @@ const config = {
     level: process.env.LOG_LEVEL || 'info',
     fileEnabled: parseBool(process.env.LOG_FILE_ENABLED, false),
     filePath: process.env.LOG_FILE_PATH || 'logs/app.log',
+  },
+
+  email: {
+    host: process.env.EMAIL_HOST || '',
+    port: parseNumber(process.env.EMAIL_PORT, 587),
+    secure: parseBool(process.env.EMAIL_SECURE, false),
+    user: process.env.EMAIL_USER || '',
+    pass: process.env.EMAIL_PASS || '',
+    from: process.env.EMAIL_FROM || 'ShelfWise AI <noreply@shelfwise.ai>',
+  },
+
+  gemini: {
+    apiKey: process.env.GEMINI_API_KEY || '',
+    model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+    ocrTimeoutMs: parseNumber(process.env.GEMINI_OCR_TIMEOUT_MS, 60000),
   },
 };
 

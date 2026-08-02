@@ -10,6 +10,7 @@ import routes from './routes/index.js';
 import notFoundHandler from './middleware/notFound.js';
 import errorHandler from './middleware/errorHandler.js';
 import globalLimiter from './middleware/rateLimiter.js';
+import { initCronJobs } from './jobs/cron.js';
 
 const app = express();
 
@@ -29,6 +30,9 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(cookieParser());
 app.use(mongoSanitize());
 app.use('/api', globalLimiter);
+
+// Initialize Scheduled Jobs
+initCronJobs();
 
 app.use('/api', routes);
 

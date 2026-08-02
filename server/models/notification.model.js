@@ -11,7 +11,13 @@ const notificationSchema = new mongoose.Schema(
       default: 'info'
     },
     read: { type: Boolean, default: false },
-    link: { type: String }
+    link: { type: String },
+    // Channel tracking — future-ready for WhatsApp, SMS
+    channels: {
+      dashboard: { type: Boolean, default: true },
+      email: { sent: { type: Boolean, default: false }, sentAt: { type: Date } },
+      whatsapp: { sent: { type: Boolean, default: false }, sentAt: { type: Date } }
+    }
   },
   { timestamps: true }
 );

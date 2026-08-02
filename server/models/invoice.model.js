@@ -2,11 +2,13 @@ import mongoose from 'mongoose';
 
 const extractedItemSchema = new mongoose.Schema({
   productName: { type: String, trim: true },
-  sku: { type: String, trim: true },
-  quantity: { type: Number, min: 0 },
-  unitCost: { type: Number, min: 0 },
-  expiryDate: { type: Date },
-  lineTotal: { type: Number, min: 0 }
+  sku:         { type: String, trim: true },
+  category:    { type: String, trim: true },
+  quantity:    { type: Number, min: 0 },
+  unitCost:    { type: Number, min: 0 },
+  purchaseDate:{ type: Date },
+  expiryDate:  { type: Date },
+  lineTotal:   { type: Number, min: 0 },
 });
 
 const invoiceUploadSchema = new mongoose.Schema(

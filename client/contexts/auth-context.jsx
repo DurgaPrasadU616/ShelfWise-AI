@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import authService from '../services/auth.service';
+import { PageLoader } from '../components/ui/page-loader';
 
 const AuthContext = createContext(null);
 
@@ -71,7 +72,7 @@ export function AuthProvider({ children }) {
   );
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return <PageLoader />;
   }
 
   return (
