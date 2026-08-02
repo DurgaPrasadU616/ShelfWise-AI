@@ -21,7 +21,7 @@ router.use(requireAuth);
 router.get('/', listSales);
 router.get('/:id', validateSaleId, validate, getSale);
 router.post('/', requireRole('manager', 'admin', 'inventory_staff'), validateCreateSale, validate, createSale);
-router.put('/:id', validateUpdateSale, validate, updateSale);
-router.delete('/:id', validateSaleId, validate, deleteSale);
+router.put('/:id', requireRole('manager', 'admin', 'inventory_staff'), validateUpdateSale, validate, updateSale);
+router.delete('/:id', requireRole('manager', 'admin', 'inventory_staff'), validateSaleId, validate, deleteSale);
 
 export default router;

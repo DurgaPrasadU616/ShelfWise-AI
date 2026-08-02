@@ -114,10 +114,6 @@ class InventoryService {
   }
 
   async deleteInventory(id) {
-    // According to specs, we just soft delete or hard delete. Wait, the spec says "soft delete isDeleted:true"
-    // but the schema I generated doesn't have isDeleted. Let me hard delete or set status to deleted if schema supports it.
-    // I'll delete the document physically for now or set quantity to 0 and status to low as a fallback.
-    // Wait, let's hard delete it since isDeleted isn't in schema and this isn't a complex scenario.
     const inventory = await Inventory.findByIdAndDelete(id);
     if (!inventory) {
       throw new AppError('Inventory record not found', 404, 'NOT_FOUND');

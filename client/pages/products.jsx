@@ -165,7 +165,7 @@ export default function Products() {
       reset();
       fetchProducts(); // Refresh list
     } catch (err) {
-      toast({ title: 'Failed to create product', description: err?.response?.data?.error || err.message, variant: 'error' });
+      toast({ title: 'Failed to create product', description: err?.response?.data?.error?.message || err.message, variant: 'error' });
     }
   };
 

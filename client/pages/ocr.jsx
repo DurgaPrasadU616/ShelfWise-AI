@@ -3,13 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   AlertCircle,
-  ArrowRight,
   Check,
   CheckCircle2,
   Circle,
   FileText,
   LoaderCircle,
-  PackagePlus,
   Plus,
   ScanText,
   Sparkles,
@@ -25,6 +23,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Alert } from '../components/ui/alert';
 import { useToast } from '../components/ui/toast';
 import { cn } from '../utils/cn';
+import { formatCurrency, formatDateTime } from '../utils/format';
 
 const ACCEPTED_TYPES = ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
 const MAX_SIZE = 10 * 1024 * 1024;
@@ -45,18 +44,6 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function formatSize(bytes) {
   return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
-}
-
-function formatDate(dateStr) {
-  if (!dateStr) return '—';
-  return new Date(dateStr).toLocaleString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric',
-    hour: 'numeric', minute: '2-digit',
-  });
-}
-
-function formatCurrency(n) {
-  return `$${Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function toDateInputValue(value) {
@@ -160,9 +147,9 @@ export default function Ocr() {
       setPhase('needs_review');
 
       // Notify user if OCR had an issue but recovered gracefully
-      if (invoiceData.error) {
+      if (invoiceData.error && (invoiceData.severity === 'warning' || invoiceData.severity === 'error')) {
         toast({
-          title: 'OCR note',
+          title: invoiceData.severity === 'error' ? 'OCR note' : 'AI unavailable',
           description: invoiceData.error,
           variant: 'warning',
         });
@@ -365,7 +352,7 @@ export default function Ocr() {
                   <Sparkles className="h-7 w-7 text-primary" />
                 </div>
                 <div className="space-y-1 text-center">
-                  <h3 className="font-semibold">Gemini AI is analysing your invoice</h3>
+                  <h3 className="font-semibold">Analysing your invoice</h3>
                   <p className="text-sm text-muted-foreground">Extracting product details, prices and dates…</p>
                 </div>
                 <div className="w-full max-w-sm">
@@ -416,6 +403,18 @@ export default function Ocr() {
               </div>
             </div>
             
+            {invoice.error && (
+              <div className="flex items-start gap-3 rounded-xl border border-warning/25 bg-warning/10 px-4 py-3 text-sm text-warning">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <div>
+                  <p className="font-medium">
+                    {invoice.severity === 'error' ? 'Limited extraction' : 'AI extraction temporarily unavailable'}
+                  </p>
+                  <p className="mt-0.5 text-warning/90">{invoice.error}</p>
+                </div>
+              </div>
+            )}
+
             {validation.errorCount > 0 && (
               <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-500">
                 <AlertTriangle className="h-4 w-4 shrink-0" />
@@ -431,7 +430,7 @@ export default function Ocr() {
                     {invoice.filename}
                   </CardTitle>
                   <CardDescription>
-                    {formatSize(invoice.size)} · {invoice.ocrEngine || 'OCR engine'} · uploaded {formatDate(invoice.createdAt)}
+                    {formatSize(invoice.size)} · {invoice.ocrEngine?.includes('rule') ? 'Basic OCR extraction' : (invoice.ocrEngine || 'OCR engine')} · uploaded {formatDateTime(invoice.createdAt)}
                   </CardDescription>
                 </div>
                 <span className="hidden font-mono text-sm text-muted-foreground sm:block">

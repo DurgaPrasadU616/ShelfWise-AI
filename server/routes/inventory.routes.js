@@ -8,11 +8,13 @@ import {
   getExpired,
   deleteInventory 
 } from '../controllers/inventory.controller.js';
-import { 
+import {
   createInventoryValidator, 
   updateInventoryValidator, 
   adjustInventoryValidator 
 } from '../validators/inventory.validator.js';
+import { objectIdParam } from '../validators/index.js';
+import validate from '../middleware/validate.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -25,10 +27,10 @@ router.get('/expired', getExpired);
 
 // Write ops require manager or admin
 router.post('/', requireRole('manager', 'admin'), createInventoryValidator, createInventory);
-router.put('/:id', requireRole('manager', 'admin'), updateInventoryValidator, updateInventory);
-router.post('/:id/adjust', requireRole('manager', 'admin'), adjustInventoryValidator, adjustInventory);
+router.put('/:id', requireRole('manager', 'admin'), objectIdParam('id'), updateInventoryValidator, updateInventory);
+router.post('/:id/adjust', requireRole('manager', 'admin'), objectIdParam('id'), adjustInventoryValidator, adjustInventory);
 
 // Admin only
-router.delete('/:id', requireRole('admin'), deleteInventory);
+router.delete('/:id', requireRole('admin'), objectIdParam('id'), validate, deleteInventory);
 
 export default router;

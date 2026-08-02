@@ -28,7 +28,7 @@ export default function Login() {
       await login(email, password);
       navigate(from, { replace: true });
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to login. Please check your credentials.');
+      setError(err.response?.data?.error?.message || 'Failed to login. Please check your credentials.');
     } finally {
       setIsLoading(false);
     }

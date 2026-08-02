@@ -12,12 +12,12 @@ export function RequireAuth({ children }) {
 }
 
 export function RequireRole({ roles, children }) {
-  const { user } = useAuth();
+  const { user, can } = useAuth();
 
   if (!user) {
     return <Navigate to="/login" replace />;
   }
-  if (!roles.some((role) => user.roles.includes(role))) {
+  if (!can(roles)) {
     return <Navigate to="/dashboard" replace />;
   }
   return children;

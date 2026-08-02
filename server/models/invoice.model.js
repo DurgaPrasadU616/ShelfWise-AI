@@ -26,6 +26,11 @@ const invoiceUploadSchema = new mongoose.Schema(
       default: 'processing'
     },
     error: { type: String },
+    severity: {
+      type: String,
+      enum: ['info', 'warning', 'error'],
+      default: 'info'
+    },
     duplicateOf: { type: mongoose.Schema.Types.ObjectId, ref: 'InvoiceUpload' }
   },
   { timestamps: true }

@@ -2,11 +2,12 @@ import cron from 'node-cron';
 import { generateRecommendations } from '../ai/recommendation.service.js';
 import { calculateInventoryHealth } from '../ai/health.service.js';
 import { broadcastAlert } from '../services/notify.js';
+import logger from '../utils/logger.js';
 
 export const initCronJobs = () => {
   // Run daily at 02:00 AM server time
   cron.schedule('0 2 * * *', async () => {
-    console.log('[Cron] Starting daily AI analysis job...');
+    logger.info('[Cron] Starting daily AI analysis job...');
     try {
       const recs = await generateRecommendations();
       const healthScore = await calculateInventoryHealth();
@@ -32,11 +33,11 @@ export const initCronJobs = () => {
         });
       }
 
-      console.log('[Cron] Daily AI analysis completed successfully.');
+      logger.info('[Cron] Daily AI analysis completed successfully.');
     } catch (error) {
-      console.error('[Cron] Error during AI analysis:', error.message);
+      logger.error('[Cron] Error during AI analysis:', error.message);
     }
   });
 
-  console.log('[Cron] Jobs initialized.');
+  logger.info('[Cron] Jobs initialized.');
 };

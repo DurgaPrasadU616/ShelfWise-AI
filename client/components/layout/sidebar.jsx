@@ -38,11 +38,11 @@ function NavItem({ item, onNavigate }) {
 }
 
 export function Sidebar({ open, onClose }) {
-  const { user } = useAuth();
+  const { user, can } = useAuth();
 
   const sections = NAV_SECTIONS.map((section) => ({
     ...section,
-    items: section.items.filter((item) => !item.hidden && (!item.adminOnly || user?.roles?.includes('admin'))),
+    items: section.items.filter((item) => !item.hidden && (!item.adminOnly || can(['admin']))),
   })).filter((section) => section.items.length > 0);
 
   return (
@@ -107,7 +107,7 @@ export function Sidebar({ open, onClose }) {
             <div className="min-w-0 leading-tight">
               <p className="truncate text-sm font-medium text-foreground">{user?.name || 'Guest'}</p>
               <p className="truncate text-xs text-muted-foreground capitalize">
-                {user?.roles?.[0]?.replace('_', ' ') || 'viewer'}
+                {user?.role?.replace('_', ' ') || (user?.roles?.[0]?.replace('_', ' ')) || 'viewer'}
               </p>
             </div>
           </div>

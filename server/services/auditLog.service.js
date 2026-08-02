@@ -1,4 +1,5 @@
 import { AuditLog } from '../models/auditLog.model.js';
+import logger from '../utils/logger.js';
 
 class AuditLogService {
   /**
@@ -26,7 +27,7 @@ class AuditLogService {
         ip
       });
     } catch (error) {
-      console.error('AuditLog Service Error:', error);
+      logger.error('AuditLog Service Error:', error);
       // We purposefully don't throw here to avoid failing the main request if logging fails
     }
   }

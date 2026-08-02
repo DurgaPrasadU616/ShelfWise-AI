@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  Bell, BellOff, Check, CheckCheck, Trash2, AlertTriangle, Info, Zap,
+  Bell, BellOff, Check, CheckCheck, Trash2,
   MailCheck, Send, Smartphone,
   Clock, X, Plus
 } from 'lucide-react';
 import notificationService from '../services/notification.service';
 import { useNotifications } from '../contexts/notification-context';
+import { notificationTypeConfig } from '../constants/notifications';
+import { formatRelativeTime } from '../utils/format';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
@@ -17,44 +19,8 @@ import { Skeleton } from '../components/ui/skeleton';
 import { EmptyState } from '../components/ui/empty-state';
 import { useToast } from '../components/ui/toast';
 
-const TYPE_CONFIG = {
-  info: {
-    icon: Info,
-    color: 'text-blue-500',
-    bg: 'bg-blue-500/8',
-    border: 'border-blue-500/15',
-    dot: 'bg-blue-500',
-    label: 'Info',
-    badge: 'default',
-  },
-  warning: {
-    icon: AlertTriangle,
-    color: 'text-amber-500',
-    bg: 'bg-amber-500/8',
-    border: 'border-amber-500/15',
-    dot: 'bg-amber-500',
-    label: 'Warning',
-    badge: 'warning',
-  },
-  danger: {
-    icon: Zap,
-    color: 'text-red-500',
-    bg: 'bg-red-500/8',
-    border: 'border-red-500/15',
-    dot: 'bg-red-500',
-    label: 'Alert',
-    badge: 'destructive',
-  },
-};
-
-const CHANNEL_ICONS = {
-  dashboard: Bell,
-  email: MailCheck,
-  whatsapp: Smartphone,
-};
-
 function NotificationItem({ notification, onRead, onDelete }) {
-  const config = TYPE_CONFIG[notification.type] || TYPE_CONFIG.info;
+  const config = notificationTypeConfig(notification.type);
   const Icon = config.icon;
   const isUnread = !notification.read;
 
@@ -145,21 +111,6 @@ function NotificationItem({ notification, onRead, onDelete }) {
       </div>
     </div>
   );
-}
-
-function formatRelativeTime(dateStr) {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now - date;
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMins / 60);
-  const diffDays = Math.floor(diffHours / 24);
-
-  if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 function groupByDate(items) {

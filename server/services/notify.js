@@ -1,6 +1,7 @@
 import { Notification } from '../models/notification.model.js';
 import { User } from '../models/user.model.js';
 import { sendEmailAlert } from '../services/notification.service.js';
+import logger from '../utils/logger.js';
 
 /**
  * Create a notification and optionally send via email.
@@ -45,7 +46,7 @@ export const createNotification = async ({ userId, title, message, type = 'info'
         }
       }
     } catch (err) {
-      console.error('[Notification] Email send failed:', err.message);
+      logger.error('[Notification] Email send failed:', err.message);
     }
   }
 

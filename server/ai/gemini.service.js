@@ -1,11 +1,11 @@
 import { GoogleGenAI } from '@google/genai';
-import dotenv from 'dotenv';
-dotenv.config();
+import config from '../config/env.js';
+import logger from '../utils/logger.js';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || 'MOCK_KEY' });
+const ai = new GoogleGenAI({ apiKey: config.gemini.apiKey || 'MOCK_KEY' });
 
 export const enrichRecommendation = async (productName, ruleReason, suggestedAction) => {
-  if (!process.env.GEMINI_API_KEY) {
+  if (!config.gemini.apiKey) {
     return {
       reason: ruleReason,
       suggestedAction: suggestedAction,
@@ -55,7 +55,7 @@ export const enrichRecommendation = async (productName, ruleReason, suggestedAct
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
       const responsePromise = ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: config.gemini.model,
         contents: prompt,
       });
 
@@ -78,7 +78,7 @@ export const enrichRecommendation = async (productName, ruleReason, suggestedAct
         source: 'ai',
       };
     } catch (error) {
-      console.error(`Gemini enrichment failed (attempt ${attempt}/${MAX_ATTEMPTS}):`, error.message);
+      logger.error(`Gemini enrichment failed (attempt ${attempt}/${MAX_ATTEMPTS}):`, error.message);
       if (attempt === MAX_ATTEMPTS) return fallback();
     }
   }

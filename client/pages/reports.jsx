@@ -32,7 +32,7 @@ export default function Reports() {
       const res = await reportService.getReports();
       setReports(res.data?.items || res.data || []);
     } catch (err) {
-      setError(err?.response?.data?.error || 'Failed to load reports from server.');
+      setError(err?.response?.data?.error?.message || 'Failed to load reports from server.');
     } finally {
       setLoading(false);
     }
@@ -50,7 +50,7 @@ export default function Reports() {
       setIsModalOpen(false);
       fetchReports();
     } catch (err) {
-      toast({ title: 'Failed to generate report', description: err?.response?.data?.error || err.message, variant: 'error' });
+      toast({ title: 'Failed to generate report', description: err?.response?.data?.error?.message || err.message, variant: 'error' });
     } finally {
       setIsGenerating(false);
     }

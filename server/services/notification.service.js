@@ -105,18 +105,3 @@ export const sendEmailAlert = async ({ to, subject, title, message, type = 'info
     return { success: false, error: err.message };
   }
 };
-
-// === Future-ready channel stubs ===
-
-export const sendWhatsAppAlert = async ({ phone, message }) => {
-  // TODO: Integrate Twilio WhatsApp API or Meta Cloud API
-  // Will use: process.env.TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, WHATSAPP_FROM_NUMBER
-  logger.warn(`[WhatsApp] STUB MODE (Unconfigured). Intended for: ${phone} | Msg: ${message}`);
-  return { success: false, reason: 'WhatsApp channel not yet configured.' };
-};
-
-export const sendSmsAlert = async ({ phone, message }) => {
-  // TODO: Integrate Twilio SMS API
-  logger.warn(`[SMS] STUB MODE (Unconfigured). Intended for: ${phone} | Msg: ${message}`);
-  return { success: false, reason: 'SMS channel not yet configured.' };
-};

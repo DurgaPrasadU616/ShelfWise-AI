@@ -8,6 +8,8 @@ import {
   retryUpload 
 } from '../controllers/ocr.controller.js';
 import { commitOcrValidator } from '../validators/ocr.validator.js';
+import { objectIdParam } from '../validators/index.js';
+import validate from '../middleware/validate.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 
 // Setup multer for in-memory upload. Max 10MB
@@ -29,10 +31,10 @@ router.use(requireAuth);
 
 // All OCR actions require manager or admin (or inventory_staff if configured, but let's say manager/admin)
 router.post('/upload', requireRole('manager', 'admin', 'inventory_staff'), upload.single('file'), uploadInvoice);
-router.get('/:uploadId', requireRole('manager', 'admin', 'inventory_staff'), getUploadStatus);
+router.get('/:uploadId', requireRole('manager', 'admin', 'inventory_staff'), objectIdParam('uploadId'), validate, getUploadStatus);
 
-router.put('/:uploadId', requireRole('manager', 'admin', 'inventory_staff'), commitOcrValidator, commitUpload);
-router.post('/:uploadId/reject', requireRole('manager', 'admin', 'inventory_staff'), rejectUpload);
-router.post('/:uploadId/retry', requireRole('manager', 'admin', 'inventory_staff'), retryUpload);
+router.put('/:uploadId', requireRole('manager', 'admin', 'inventory_staff'), objectIdParam('uploadId'), commitOcrValidator, commitUpload);
+router.post('/:uploadId/reject', requireRole('manager', 'admin', 'inventory_staff'), objectIdParam('uploadId'), validate, rejectUpload);
+router.post('/:uploadId/retry', requireRole('manager', 'admin', 'inventory_staff'), objectIdParam('uploadId'), validate, retryUpload);
 
 export default router;

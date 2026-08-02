@@ -6,6 +6,7 @@ coverage/
 logs/
 *.log
 *.tmp
+*.traineddata
 .vscode/
 .idea/
 .DS_Store
