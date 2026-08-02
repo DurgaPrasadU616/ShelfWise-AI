@@ -20,8 +20,11 @@ app.set('trust proxy', 1);
 app.use(helmet());
 app.use(
   cors({
-    origin: config.cors.origin,
-    credentials: config.cors.credentials,
+    origin: function (origin, callback) {
+      // DEMO MODE: Dynamically allow any origin to prevent CORS Network Errors
+      callback(null, true);
+    },
+    credentials: true,
   })
 );
 app.use(morgan('combined', { stream: { write: (msg) => logger.http(msg.trim()) } }));
