@@ -2,9 +2,8 @@ import axios from 'axios';
 
 // Create a singleton axios instance
 const api = axios.create({
-  // Explicitly configured URL in production, otherwise fall back to same-origin
-  // (/api) which the Vite dev proxy or host reverse proxy routes to the backend.
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  // DEMO MODE: Hardcoded Render API URL so you don't need to configure Vercel Environment Variables!
+  baseURL: 'https://shelfwise-ai-api.onrender.com/api',
   withCredentials: true, // Send cookies with every request
 });
 
