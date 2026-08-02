@@ -2,7 +2,9 @@ import axios from 'axios';
 
 // Create a singleton axios instance
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  // Explicitly configured URL in production, otherwise fall back to same-origin
+  // (/api) which the Vite dev proxy or host reverse proxy routes to the backend.
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   withCredentials: true, // Send cookies with every request
 });
 
