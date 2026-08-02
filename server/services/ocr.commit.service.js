@@ -22,8 +22,8 @@ function triggerInventoryAnalysis(invoiceId) {
 // ─── Main commit function ─────────────────────────────────────────────────────
 export const commitInvoice = async (req, uploadId, items) => {
   const invoice = await InvoiceUpload.findById(uploadId);
-  if (!invoice) throw new AppError('Invoice not found', 404, 'NOT_FOUND');
-  if (invoice.status === 'committed') throw new AppError('Already committed', 409, 'CONFLICT');
+  if (!invoice) throw new AppError('NOT_FOUND', 'Invoice not found', 404);
+  if (invoice.status === 'committed') throw new AppError('CONFLICT', 'Already committed', 409);
 
   let productsCreated = 0;
   let batchesCreated  = 0;

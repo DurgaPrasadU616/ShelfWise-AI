@@ -37,7 +37,7 @@ class SupplierService {
   async getSupplierById(id) {
     const supplier = await Supplier.findById(id);
     if (!supplier) {
-      throw new AppError('Supplier not found', 404, 'NOT_FOUND');
+      throw new AppError('NOT_FOUND', 'Supplier not found', 404);
     }
     return supplier;
   }
@@ -50,7 +50,7 @@ class SupplierService {
       ],
     });
     if (existing) {
-      throw new AppError('Supplier with this name or email already exists', 409, 'DUPLICATE_SUPPLIER');
+      throw new AppError('DUPLICATE_SUPPLIER', 'Supplier with this name or email already exists', 409);
     }
 
     const supplier = await Supplier.create(data);
@@ -60,7 +60,7 @@ class SupplierService {
   async updateSupplier(id, data) {
     const supplier = await Supplier.findByIdAndUpdate(id, data, { new: true, runValidators: true });
     if (!supplier) {
-      throw new AppError('Supplier not found', 404, 'NOT_FOUND');
+      throw new AppError('NOT_FOUND', 'Supplier not found', 404);
     }
     return supplier;
   }
@@ -68,7 +68,7 @@ class SupplierService {
   async deleteSupplier(id) {
     const supplier = await Supplier.findByIdAndDelete(id);
     if (!supplier) {
-      throw new AppError('Supplier not found', 404, 'NOT_FOUND');
+      throw new AppError('NOT_FOUND', 'Supplier not found', 404);
     }
     return supplier;
   }

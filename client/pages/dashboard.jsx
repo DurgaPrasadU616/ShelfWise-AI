@@ -22,6 +22,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import aiService from '../services/ai.service';
+import dashboardService from '../services/dashboard.service';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { StatCard } from '../components/ui/stat-card';
 import { Alert } from '../components/ui/alert';
@@ -107,6 +108,12 @@ export default function Dashboard() {
   const location = useLocation();
   const [healthMetrics, setHealthMetrics] = useState(null);
   const [ocrRefreshBanner, setOcrRefreshBanner] = useState(false);
+  const [chartData, setChartData] = useState({
+    demandForecast: demandForecastData,
+    valueTrend: valueTrendData,
+    expiryTimeline: expiryTimelineData,
+    categoryData: categoryData,
+  });
 
   useEffect(() => {
     let active = true;
@@ -118,6 +125,22 @@ export default function Dashboard() {
       .getHealthMetrics()
       .then((res) => active && setHealthMetrics(res.data || null))
       .catch(() => active && setHealthMetrics(null));
+
+    dashboardService
+      .getAnalytics()
+      .then((res) => {
+        if (!active || !res.data) return;
+        setChartData((prev) => ({
+          ...prev,
+          ...(res.data.demandForecast ? { demandForecast: res.data.demandForecast } : {}),
+          ...(res.data.valueTrend ? { valueTrend: res.data.valueTrend } : {}),
+          ...(res.data.expiryTimeline ? { expiryTimeline: res.data.expiryTimeline } : {}),
+          ...(res.data.categoryDistribution?.length ? { categoryData: res.data.categoryDistribution } : {}),
+        }));
+      })
+      .catch(() => {
+        /* keep hardcoded fallback */
+      });
 
     const bannerTimer = setTimeout(() => setOcrRefreshBanner(false), 6000);
     return () => {
@@ -161,7 +184,7 @@ export default function Dashboard() {
           className="lg:col-span-2"
         >
           <ResponsiveContainer width="100%" height={240}>
-            <ComposedChart data={demandForecastData} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+            <ComposedChart data={chartData.demandForecast} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="gradActual" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="var(--success)" stopOpacity={0.25} />
@@ -203,14 +226,14 @@ export default function Dashboard() {
           <ResponsiveContainer width="100%" height={240}>
             <PieChart>
               <Pie
-                data={categoryData}
+                data={chartData.categoryData}
                 innerRadius={60}
                 outerRadius={82}
                 paddingAngle={4}
                 dataKey="value"
                 stroke="none"
               >
-                {categoryData.map((_, index) => (
+                {chartData.categoryData.map((_, index) => (
                   <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
                 ))}
               </Pie>
@@ -218,7 +241,7 @@ export default function Dashboard() {
             </PieChart>
           </ResponsiveContainer>
           <div className="mt-2 space-y-1.5">
-            {categoryData.map((cat, index) => (
+            {chartData.categoryData.map((cat, index) => (
               <div key={cat.name} className="flex items-center gap-2 text-sm">
                 <span
                   className="h-2 w-2 rounded-sm"
@@ -240,7 +263,7 @@ export default function Dashboard() {
           className="lg:col-span-2"
         >
           <ResponsiveContainer width="100%" height={240}>
-            <AreaChart data={valueTrendData} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+            <AreaChart data={chartData.valueTrend} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.25} />
@@ -277,7 +300,7 @@ export default function Dashboard() {
       {/* Expiry timeline */}
       <ChartCard title="Expiry timeline" description="Units expiring over the next 8 weeks">
         <ResponsiveContainer width="100%" height={240}>
-          <BarChart data={expiryTimelineData} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+          <BarChart data={chartData.expiryTimeline} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
             <CartesianGrid stroke="var(--border)" strokeOpacity={0.5} vertical={false} />
             <XAxis dataKey="week" tick={AXIS_TICK} tickLine={false} axisLine={false} />
             <YAxis tick={AXIS_TICK} tickLine={false} axisLine={false} width={30} allowDecimals={false} />

@@ -47,7 +47,7 @@ class InventoryService {
       return inventory;
     } catch (err) {
       if (err.code === 11000) {
-        throw new AppError('This batch already exists for the product', 409, 'DUPLICATE_BATCH');
+        throw new AppError('DUPLICATE_BATCH', 'This batch already exists for the product', 409);
       }
       throw err;
     }
@@ -56,7 +56,7 @@ class InventoryService {
   async updateInventory(id, data) {
     const inventory = await Inventory.findByIdAndUpdate(id, data, { new: true, runValidators: true });
     if (!inventory) {
-      throw new AppError('Inventory record not found', 404, 'NOT_FOUND');
+      throw new AppError('NOT_FOUND', 'Inventory record not found', 404);
     }
     return inventory;
   }
@@ -64,14 +64,14 @@ class InventoryService {
   async adjustInventory(id, delta, reason) {
     const inventory = await Inventory.findById(id);
     if (!inventory) {
-      throw new AppError('Inventory record not found', 404, 'NOT_FOUND');
+      throw new AppError('NOT_FOUND', 'Inventory record not found', 404);
     }
 
     const previousQuantity = inventory.quantity;
     const newQuantity = previousQuantity + delta;
 
     if (newQuantity < 0) {
-      throw new AppError('Adjustment would result in negative stock', 422, 'INVALID_QUANTITY');
+      throw new AppError('INVALID_QUANTITY', 'Adjustment would result in negative stock', 422);
     }
 
     inventory.quantity = newQuantity;
@@ -116,7 +116,7 @@ class InventoryService {
   async deleteInventory(id) {
     const inventory = await Inventory.findByIdAndDelete(id);
     if (!inventory) {
-      throw new AppError('Inventory record not found', 404, 'NOT_FOUND');
+      throw new AppError('NOT_FOUND', 'Inventory record not found', 404);
     }
     return inventory;
   }

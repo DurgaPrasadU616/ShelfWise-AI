@@ -22,12 +22,12 @@ class RecommendationService {
 
   async updateRecommendationStatus(id, action) {
     if (!['apply', 'dismiss'].includes(action)) {
-      throw new AppError('Invalid action. Use apply or dismiss.', 400, 'BAD_REQUEST');
+      throw new AppError('BAD_REQUEST', 'Invalid action. Use apply or dismiss.', 400);
     }
 
     const recommendation = await Recommendation.findById(id);
     if (!recommendation) {
-      throw new AppError('Recommendation not found', 404, 'NOT_FOUND');
+      throw new AppError('NOT_FOUND', 'Recommendation not found', 404);
     }
 
     recommendation.status = action === 'apply' ? 'accepted' : 'dismissed';

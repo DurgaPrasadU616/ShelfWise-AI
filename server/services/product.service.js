@@ -38,7 +38,7 @@ class ProductService {
   async getProductById(id) {
     const product = await Product.findById(id);
     if (!product) {
-      throw new AppError('Product not found', 404, 'NOT_FOUND');
+      throw new AppError('NOT_FOUND', 'Product not found', 404);
     }
     return product;
   }
@@ -47,7 +47,7 @@ class ProductService {
     // Check for duplicate SKU
     const existing = await Product.findOne({ sku: data.sku });
     if (existing) {
-      throw new AppError('Product with this SKU already exists', 409, 'DUPLICATE_SKU');
+      throw new AppError('DUPLICATE_SKU', 'Product with this SKU already exists', 409);
     }
     
     const product = await Product.create(data);
@@ -58,13 +58,13 @@ class ProductService {
     if (data.sku) {
       const existing = await Product.findOne({ sku: data.sku, _id: { $ne: id } });
       if (existing) {
-        throw new AppError('Product with this SKU already exists', 409, 'DUPLICATE_SKU');
+        throw new AppError('DUPLICATE_SKU', 'Product with this SKU already exists', 409);
       }
     }
 
     const product = await Product.findByIdAndUpdate(id, data, { new: true, runValidators: true });
     if (!product) {
-      throw new AppError('Product not found', 404, 'NOT_FOUND');
+      throw new AppError('NOT_FOUND', 'Product not found', 404);
     }
     return product;
   }
@@ -72,7 +72,7 @@ class ProductService {
   async softDeleteProduct(id) {
     const product = await Product.findByIdAndUpdate(id, { isActive: false }, { new: true });
     if (!product) {
-      throw new AppError('Product not found', 404, 'NOT_FOUND');
+      throw new AppError('NOT_FOUND', 'Product not found', 404);
     }
     return product;
   }

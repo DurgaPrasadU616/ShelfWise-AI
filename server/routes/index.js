@@ -11,6 +11,7 @@ import aiRoutes from './ai.routes.js';
 import reportRoutes from './report.routes.js';
 import notificationRoutes from './notification.routes.js';
 import saleRoutes from './sale.routes.js';
+import dashboardRoutes from './dashboard.routes.js';
 
 const router = Router();
 
@@ -26,6 +27,7 @@ router.use('/ai', aiRoutes);
 router.use('/reports', reportRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/sales', saleRoutes);
+router.use('/dashboard', dashboardRoutes);
 
 export default router;
  
