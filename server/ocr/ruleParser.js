@@ -37,7 +37,7 @@ function parseQty(value) {
 function parseDate(str) {
   const s = String(str || '').trim();
   if (!s) return null;
-  const dmy = s.match(/\b(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})\b/);
+  const dmy = s.match(/\b(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})\b/);
   if (dmy) {
     const [, p1, p2, p3] = dmy.map((x) => Number(x));
     let y, m, d;
@@ -48,7 +48,7 @@ function parseDate(str) {
       if (!Number.isNaN(date.getTime())) return date;
     }
   }
-  const mon = s.match(/\b(0?\d|1[0-2])[\/\-.]\d{2,4}\b/);
+  const mon = s.match(/\b(0?\d|1[0-2])[/\-.]\d{2,4}\b/);
   return null;
 }
 

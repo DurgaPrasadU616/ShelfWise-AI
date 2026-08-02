@@ -8,7 +8,7 @@ export const fetchReportData = async (type) => {
   let rawData = [];
   
   switch (type) {
-    case 'inventory':
+    case 'inventory': {
       const batches = await Inventory.find({ quantity: { $gt: 0 } }).populate('product', 'name sku').lean();
       rawData = batches.map(b => ({
         SKU: b.product?.sku || 'N/A',
@@ -19,8 +19,9 @@ export const fetchReportData = async (type) => {
         Expiry: b.expiryDate ? new Date(b.expiryDate).toISOString().split('T')[0] : 'None'
       }));
       break;
+    }
 
-    case 'expiry':
+    case 'expiry': {
       const now = new Date();
       const nextMonth = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
       const expiring = await Inventory.find({ quantity: { $gt: 0 }, expiryDate: { $lte: nextMonth } }).populate('product', 'name sku').lean();
@@ -32,8 +33,9 @@ export const fetchReportData = async (type) => {
         'Status': new Date(b.expiryDate) < now ? 'Expired' : 'Expiring Soon'
       }));
       break;
+    }
 
-    case 'recommendation':
+    case 'recommendation': {
       const recs = await Recommendation.find({ status: 'open' }).populate('product', 'name sku').lean();
       rawData = recs.map(r => ({
         SKU: r.product?.sku || 'N/A',
@@ -43,7 +45,8 @@ export const fetchReportData = async (type) => {
         'Suggested Action': r.suggestedAction
       }));
       break;
-      
+    }
+
     default:
       rawData = [{ Note: `Report type ${type} data not implemented yet.` }];
   }
